@@ -1,0 +1,36 @@
+version: '3.8'
+services:
+  hng_security_app:
+    image: hng_security_app:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 8086:8086
+    environment:
+      SPRING_DATASOURCE_URL: "${DB_URL}"
+      SPRING_DATASOURCE_USERNAME: "${DB_USERNAME}"
+      SPRING_DATASOURCE_PASSWORD: "${DB_PASSWORD}"
+      SHA512: "${SHA_SECRET}"
+    networks:
+      - app-network
+    depends_on:
+      - db
+
+
+  db:
+    image: postgres:latest
+    container_name: liveairwayDB
+    ports:
+      - 5437:5437
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: Airway
+    networks:
+      - app-network
+
+
+networks:
+  app-network:
+    driver: bridge
