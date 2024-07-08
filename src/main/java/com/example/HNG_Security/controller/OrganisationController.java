@@ -5,6 +5,8 @@ import com.example.HNG_Security.dto.request.OrganisationRequest;
 import com.example.HNG_Security.dto.response.ApiResponse;
 import com.example.HNG_Security.dto.response.OrganisationListResponse;
 import com.example.HNG_Security.dto.response.OrganisationResponse;
+import com.example.HNG_Security.dto.response.OrganisationUserError;
+import com.example.HNG_Security.exception.ValidationError;
 import com.example.HNG_Security.model.Organisation;
 import com.example.HNG_Security.service.OrganisationService;
 import jakarta.validation.Valid;
@@ -27,24 +29,25 @@ public class OrganisationController {
         this.organisationService = organisationService;
     }
 
+
     @GetMapping
     public ResponseEntity<ApiResponse<OrganisationListResponse>> getUserOrganisations() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName(); // Assuming email is the unique identifier
+        String email = authentication.getName();
 
         List<Organisation> organisations = organisationService.getUserOrganisations(email);
 
-        List<OrganisationResponse> organisationsResponse = organisations.stream()
+        List<OrganisationResponse> organisationResponses = organisations.stream()
                 .map(this::mapToOrganisationResponse)
                 .collect(Collectors.toList());
 
         OrganisationListResponse organisationListResponse = new OrganisationListResponse();
-        organisationListResponse.setOrganisations(organisationsResponse);
-
+        organisationListResponse.setOrganisations(organisationResponses);
 
         ApiResponse<OrganisationListResponse> response = new ApiResponse<>("success", "User organisations retrieved successfully", organisationListResponse);
         return ResponseEntity.ok(response);
     }
+
 
     @GetMapping("/{orgId}")
     public ResponseEntity<ApiResponse<OrganisationResponse>> getOrganisationById(@PathVariable String orgId) {
@@ -73,10 +76,10 @@ public class OrganisationController {
     }
 
     @PostMapping("/{orgId}/users")
-    public ResponseEntity<ApiResponse<String>> addUserToOrganisation(@PathVariable String orgId, @Valid @RequestBody AddUserRequest request) {
+    public ResponseEntity<?> addUserToOrganisation(@PathVariable String orgId, @Valid @RequestBody AddUserRequest request) {
         organisationService.addUserToOrganisation(orgId, request.getUserId());
 
-        ApiResponse<String> response = new ApiResponse<>("success", "User added to organisation successfully", null);
+        OrganisationUserError response = new OrganisationUserError("success", "User added to organisation successfully");
         return ResponseEntity.ok(response);
     }
 

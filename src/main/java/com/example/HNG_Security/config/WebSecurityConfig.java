@@ -82,8 +82,7 @@ public class WebSecurityConfig {
                 .authorizeHttpRequests(httpRequests ->
                         httpRequests
 //                                .requestMatchers("").hasAuthority(String.valueOf(Role.ADMIN))
-                                .requestMatchers(
-                                        "/auth/**").permitAll()
+                                .requestMatchers("/" ,"/auth/**").permitAll()
                                 .requestMatchers("/api/v1/auth/logout","/api/organisations/**", "/api/users/**").authenticated())
                 .logout(logout -> logout
                         .deleteCookies("remove")

@@ -37,14 +37,4 @@ public class AuthController {
     public ResponseEntity<?> login(@Validated @RequestBody LoginRequest request) {
         return userService.loginUser(request);
     }
-
-    private UserResponse getUserResponse(User user){
-        UserResponse userResponse = new UserResponse();
-        userResponse.setUserId(user.getUserId());
-        userResponse.setFirstName(user.getFirstName());
-        userResponse.setLastName(user.getLastName());
-        userResponse.setEmail(user.getEmail());
-        userResponse.setPhone(user.getPhone());
-        return userResponse;
-    }
 }

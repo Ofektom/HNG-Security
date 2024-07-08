@@ -1,0 +1,22 @@
+# fly.toml app configuration file generated for hng-security on 2024-07-08T00:00:49+01:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'hng-security'
+primary_region = 'cdg'
+
+[build]
+
+[http_service]
+  internal_port = 8086
+  force_https = true
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

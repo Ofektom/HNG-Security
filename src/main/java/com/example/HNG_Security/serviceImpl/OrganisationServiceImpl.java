@@ -2,19 +2,19 @@ package com.example.HNG_Security.serviceImpl;
 
 import com.example.HNG_Security.dto.request.OrganisationRequest;
 import com.example.HNG_Security.exception.OrganisationNotFoundException;
+import com.example.HNG_Security.exception.UnauthorizedUserException;
 import com.example.HNG_Security.exception.UserNotFoundException;
 import com.example.HNG_Security.model.Organisation;
 import com.example.HNG_Security.model.User;
 import com.example.HNG_Security.repository.OrganisationRepository;
 import com.example.HNG_Security.repository.UserRepository;
 import com.example.HNG_Security.service.OrganisationService;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.List;
-import java.util.Optional;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @Service
 public class OrganisationServiceImpl implements OrganisationService {
@@ -29,13 +29,11 @@ public class OrganisationServiceImpl implements OrganisationService {
 
     @Transactional(readOnly = true)
     public List<Organisation> getUserOrganisations(String userEmail) {
-        Optional<User> userOptional = userRepository.findByEmail(userEmail);
-        if (userOptional.isEmpty()) {
-            throw new UserNotFoundException("User not found");
-        }
-        User user = userOptional.get();
-        return organisationRepository.findByUsers(user);
+        User user = userRepository.findByEmail(userEmail)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        return new ArrayList<>(user.getOrganisations());
     }
+
 
     @Transactional(readOnly = true)
     public Organisation getOrganisationById(String orgId) {
@@ -62,13 +60,28 @@ public class OrganisationServiceImpl implements OrganisationService {
 
     @Transactional
     public void addUserToOrganisation(String orgId, String userId) {
-        Organisation organisation = organisationRepository.findByOrgId(orgId)
-                .orElseThrow(() -> new OrganisationNotFoundException("Organisation not found"));
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        String email = authentication.getName();
 
-        User user = userRepository.findByUserId(userId)
-                .orElseThrow(() -> new UserNotFoundException("User not found"));
+        Optional<User> member = userRepository.findByEmail(email);
+        if (member.isPresent()){
+            Organisation authOrganisation = organisationRepository.findByUsersContains(member.get());
+            Organisation organisation = organisationRepository.findByOrgId(orgId).orElseThrow(() -> new OrganisationNotFoundException("Organisation not found"));
+            if(authOrganisation == organisation){
+                User user = userRepository.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
+                organisation.getUsers().add(user);
+                organisationRepository.save(organisation);
+            }else{
+                throw new UnauthorizedUserException("UNAUTHORIZED");
+            }
+        }else {
+            throw new UserNotFoundException("User is not registered");
+        }
 
-        organisation.getUsers().add(user);
-        organisationRepository.save(organisation);
+
+
+
+
+
     }
 }

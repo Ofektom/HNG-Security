@@ -2,6 +2,7 @@ package com.example.HNG_Security.serviceImpl;
 
 import com.example.HNG_Security.dto.request.LoginRequest;
 import com.example.HNG_Security.dto.request.RegisterRequest;
+import com.example.HNG_Security.dto.request.validation.Errors;
 import com.example.HNG_Security.dto.response.ApiResponse;
 import com.example.HNG_Security.dto.response.ErrorResponse;
 import com.example.HNG_Security.dto.response.UserResponse;
@@ -10,6 +11,7 @@ import com.example.HNG_Security.exception.InvalidEmailOrPasswordException;
 import com.example.HNG_Security.exception.UserNotFoundException;
 import com.example.HNG_Security.model.Organisation;
 import com.example.HNG_Security.model.User;
+import com.example.HNG_Security.model.UserValidator;
 import com.example.HNG_Security.repository.OrganisationRepository;
 import com.example.HNG_Security.repository.UserRepository;
 import com.example.HNG_Security.service.OrganisationService;
@@ -42,17 +44,17 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     private final OrganisationService organisationService;
     private final OrganisationRepository organisationRepository;
     private final JwtUtils jwtUtils;
-    private final AuthenticationManager authenticationManager;
+    private final UserValidator userValidator;
 
 
     @Autowired
-    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, OrganisationService organisationService, OrganisationRepository organisationRepository, JwtUtils jwtUtils, @Lazy AuthenticationManager authenticationManager) {
+    public UserServiceImpl(UserRepository userRepository, PasswordEncoder passwordEncoder, OrganisationService organisationService, OrganisationRepository organisationRepository, JwtUtils jwtUtils, UserValidator userValidator) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.organisationService = organisationService;
         this.organisationRepository = organisationRepository;
         this.jwtUtils = jwtUtils;
-        this.authenticationManager = authenticationManager;
+        this.userValidator = userValidator;
     }
 
     @Override
@@ -61,60 +63,62 @@ public class UserServiceImpl implements UserService, UserDetailsService {
                 .orElseThrow(() -> new UsernameNotFoundException("Email not Found"));
     }
 
+
     @Override
     @Transactional
     public ResponseEntity<?> registerUser(RegisterRequest request) {
+        log.info("Starting registration process for: {}", request.getEmail());
 
-        if (userRepository.findByEmail(request.getEmail()).isPresent()) {
-            throw new EmailAlreadyExistException("Email already registered");
+        Errors validationResponse = userValidator.validateUser(request);
+        if (validationResponse != null) {
+            log.error("Validation errors: {}", validationResponse.getErrors());
+            return ResponseEntity.badRequest().body(validationResponse.getErrors());
         }
 
-        User user = new User();
-        user.setUserId(UUID.randomUUID().toString());
-        user.setFirstName(request.getFirstName());
-        user.setLastName(request.getLastName());
-        user.setEmail(request.getEmail());
-        user.setPassword(passwordEncoder.encode(request.getPassword()));
-        user.setPhone(request.getPhone());
-
-        // Save the user to the database
-        User savedUser = userRepository.save(user);
-
-        // Create a new Organisation object with the user's first name appended with "Organisation"
-        Organisation organisation = new Organisation();
-        organisation.setOrgId(UUID.randomUUID().toString());
-        organisation.setName(user.getFirstName() + "'s Organisation");
-        organisation.setDescription("Default organisation for " + user.getFirstName());
-
-        Set<User> users = new HashSet<>();
-        users.add(savedUser);
-        organisation.setUsers(users);
-
-        // Save the organisation to the database
-        Organisation savedOrganisation = organisationRepository.save(organisation);
-
-//        Set<Organisation> organisations = new HashSet<>();
-//        organisations.add(savedOrganisation);
-//
-//        savedUser.setOrganisations(organisations);
-//        userRepository.save(savedUser);
-
-        UserDetails userDetails = loadUserByUsername(request.getEmail());
-        String token = jwtUtils.createJwt.apply(userDetails);
-
         try {
+            User user = new User();
+            user.setUserId(UUID.randomUUID().toString());
+            user.setFirstName(request.getFirstName());
+            user.setLastName(request.getLastName());
+            user.setEmail(request.getEmail());
+            user.setPassword(passwordEncoder.encode(request.getPassword()));
+            user.setPhone(request.getPhone());
+
+            log.info("Saving user: {}", user);
+            User savedUser = userRepository.save(user);
+
+            Organisation organisation = new Organisation();
+            organisation.setOrgId(UUID.randomUUID().toString());
+            organisation.setName(user.getFirstName() + "'s Organisation");
+            organisation.setDescription("Default organisation for " + user.getFirstName());
+            organisation.setUsers(new HashSet<>(Collections.singletonList(savedUser)));
+
+            log.info("Saving organisation: {}", organisation);
+            Organisation savedOrganisation = organisationRepository.save(organisation);
+
+            // Now set the organisation to the user and update the user
+            savedUser.setOrganisations(new HashSet<>(Collections.singletonList(savedOrganisation)));
+            userRepository.save(savedUser);
+
+            // Generate JWT token
+            UserDetails userDetails = loadUserByUsername(request.getEmail());
+            String token = jwtUtils.createJwt.apply(userDetails);
+
             UserResponse userResponse = getUserResponse(savedUser);
             ApiResponse.AuthData authData = new ApiResponse.AuthData(token, userResponse);
             ApiResponse<ApiResponse.AuthData> response = new ApiResponse<>("success", "Registration successful", authData);
             return new ResponseEntity<>(response, HttpStatus.CREATED);
         } catch (Exception e) {
+            log.error("Exception occurred during registration: ", e);
             ErrorResponse errorResponse = new ErrorResponse("Bad request", "Registration unsuccessful", HttpStatus.BAD_REQUEST.value());
             return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
         }
     }
 
+
     @Override
     public ResponseEntity<?> loginUser(LoginRequest request) {
+
         UserDetails userDetails = loadUserByUsername(request.getEmail());
         User user = (User) userDetails;
 
@@ -122,8 +126,6 @@ public class UserServiceImpl implements UserService, UserDetailsService {
         if (!passwordEncoder.matches(request.getPassword(), userDetails.getPassword())) {
             throw new InvalidEmailOrPasswordException("Invalid email or password");
         }
-
-
         try{
             String token = jwtUtils.createJwt.apply(userDetails);
 
@@ -138,8 +140,8 @@ public class UserServiceImpl implements UserService, UserDetailsService {
     }
 
 
-    public User getUserById(Long id) {
-        Optional<User> optionalUser = userRepository.findById(id);
+    public User getUserById(String id) {
+        Optional<User> optionalUser = userRepository.findByUserId(id);
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
             Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
@@ -159,15 +161,11 @@ public class UserServiceImpl implements UserService, UserDetailsService {
 
 
     public boolean userBelongsToOrganisation(User user, String email) {
-        // Get organisations the target user belongs to
         Set<Organisation> targetUserOrganisations = user.getOrganisations();
 
-
-        // Get organisations the authenticated user belongs to
         List<Organisation> authUserOrganisationsList = organisationService.getUserOrganisations(email);
         Set<Organisation> authUserOrganisations = new HashSet<>(authUserOrganisationsList);
 
-        // Check if there's any common organisation
         return targetUserOrganisations.stream().anyMatch(authUserOrganisations::contains);
     }
 

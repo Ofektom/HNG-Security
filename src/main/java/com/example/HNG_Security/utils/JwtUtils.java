@@ -39,7 +39,7 @@ public class JwtUtils {
             .from(LocalDateTime.now()
                     .plusMinutes(60).atZone(ZoneId.systemDefault()).toInstant());
 
-    private <T> T extractClaims(String token, Function<Claims, T> claimResolver) {
+    public <T> T extractClaims(String token, Function<Claims, T> claimResolver) {
         final Claims claims = Jwts.parser()
                 .verifyWith(getKey.get())
                 .build().parseSignedClaims(token).getPayload();

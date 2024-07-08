@@ -9,12 +9,11 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Set;
+import java.util.*;
 
 @Data
 @AllArgsConstructor
@@ -26,33 +25,28 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(name = "user_id", nullable = false, unique = true)
-    @NotEmpty(message = "User ID must not be empty")
+    @Column(unique = true)
     private String userId;
 
-    @Column(nullable = false)
-    @NotNull(message = "First name must not be null")
+    @NonNull
     private String firstName;
-
-    @Column(nullable = false)
-    @NotNull(message = "Last name must not be null")
+    @NonNull
     private String lastName;
 
-    @Column(nullable = false, unique = true)
-    @Email(message = "Enter a valid email")
-    @NotNull(message = "Email must not be null")
+
+    @Column(unique = true)
+    @NonNull
     private String email;
 
-    @Column(nullable = false) // Maps to the 'password' column
-    @NotNull(message = "Password must not be null")
-    @Size(min = 8, message = "Password must be at least 8 characters long")
-    private String password;
 
+
+    private String password;
     private String phone;
 
+    @JsonIgnore
+    @ManyToMany(mappedBy = "users", fetch = FetchType.LAZY)
+    private Set<Organisation> organisations = new HashSet<>();
 
-    @ManyToMany(mappedBy = "users")
-    private Set<Organisation> organisations;
 
     @Override
     @JsonIgnore
@@ -85,7 +79,21 @@ public class User implements UserDetails {
     }
 
     @Override
+    @JsonIgnore
     public boolean isEnabled() {
         return true;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        User user = (User) o;
+        return Objects.equals(id, user.id);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id);
     }
 }

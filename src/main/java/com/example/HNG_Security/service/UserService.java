@@ -14,5 +14,5 @@ public interface UserService {
     ResponseEntity<?> loginUser(LoginRequest request);
 
 
-    User getUserById(Long id);
+    User getUserById(String id);
 }
