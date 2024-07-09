@@ -2,6 +2,7 @@ package com.example.HNG_Security.serviceImpl;
 
 import com.example.HNG_Security.dto.request.LoginRequest;
 import com.example.HNG_Security.dto.request.RegisterRequest;
+import com.example.HNG_Security.dto.request.validation.Errors;
 import com.example.HNG_Security.dto.response.ApiResponse;
 import com.example.HNG_Security.dto.response.ErrorResponse;
 import com.example.HNG_Security.dto.response.UserResponse;
@@ -14,8 +15,8 @@ import com.example.HNG_Security.model.UserValidator;
 import com.example.HNG_Security.repository.OrganisationRepository;
 import com.example.HNG_Security.repository.UserRepository;
 import com.example.HNG_Security.service.OrganisationService;
+import com.example.HNG_Security.serviceImpl.UserServiceImpl;
 import com.example.HNG_Security.utils.JwtUtils;
-import io.jsonwebtoken.Claims;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -54,6 +55,9 @@ class UserServiceImplTest {
     @InjectMocks
     UserServiceImpl userService;
 
+    @InjectMocks
+    UserValidator userValidator;
+
     @Mock
     UserRepository userRepository;
 
@@ -70,7 +74,7 @@ class UserServiceImplTest {
     JwtUtils jwtUtils;
 
     @Mock
-    UserValidator userValidator;
+    AuthenticationManager authenticationManager;
 
     @Autowired
     private MockMvc mockMvc;
@@ -83,6 +87,53 @@ class UserServiceImplTest {
 
     }
 
+
+    @Test
+    void testRegisterUser_Successful_DefaultOrganisation() {
+        RegisterRequest signupRequest = new RegisterRequest("John", "Doe", "john.doe@example.com", "password", "1234567890");
+
+        User user = new User();
+        user.setUserId("someUserId");
+        user.setFirstName(signupRequest.getFirstName());
+        user.setLastName(signupRequest.getLastName());
+        user.setEmail(signupRequest.getEmail());
+        user.setPassword(signupRequest.getPassword());
+        user.setPhone(signupRequest.getPhone());
+
+        Organisation organisation = new Organisation();
+        organisation.setOrgId("someOrgId");
+        organisation.setName(user.getFirstName() + "'s Organisation");
+        organisation.setDescription("Default organisation for " + user.getFirstName());
+        organisation.setUsers(new HashSet<>(Collections.singletonList(user)));
+
+        when(passwordEncoder.encode(signupRequest.getPassword())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        when(userRepository.findByEmail("john.doe@example.com")).thenReturn(Optional.of(new User()));
+        when(jwtUtils.createJwt.apply(any(User.class))).thenReturn("someToken");
+        when(organisationRepository.save(any(Organisation.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        ResponseEntity<?> responseEntity = userService.registerUser(signupRequest);
+        assertNotNull(responseEntity);
+        assertNotNull(responseEntity);
+        ApiResponse<?> response = (ApiResponse<?>) responseEntity.getBody();
+        assertNotNull(response);
+        assertEquals(HttpStatus.CREATED, responseEntity.getStatusCode());
+        assertEquals("success", response.getStatus());
+        assertEquals("Registration successful", response.getMessage());
+        assertNotNull(response.getData());
+
+        ApiResponse.AuthData authData =(ApiResponse.AuthData) response.getData();
+        assertNotNull(authData);
+        assertEquals("someToken", authData.getAccessToken());
+
+        UserResponse userResponse = authData.getUser();
+        assertNotNull(userResponse);
+        assertEquals(user.getFirstName(), userResponse.getFirstName());
+        assertEquals(user.getLastName(), userResponse.getLastName());
+        assertEquals(user.getEmail(), userResponse.getEmail());
+        assertNotNull(userResponse.getPhone());
+
+    }
 
 
     @Test
@@ -188,7 +239,7 @@ class UserServiceImplTest {
                 () -> userService.loginUser(loginRequest)
         );
 
-        assertEquals("Invalid email or password", thrown.getMessage());
+        assertEquals("Authentication failed", thrown.getMessage());
     }
 
     // Test case for login failure due to user not found
@@ -221,6 +272,86 @@ class UserServiceImplTest {
         String token = jwtUtils.createJwt.apply(user);
 
         assertEquals("generatedToken", token);
+    }
+
+
+
+
+
+    @Test
+    void testRegisterUser_DatabaseConstraintViolation() {
+        RegisterRequest signupRequest = new RegisterRequest("John", "Doe", "john.doe@example.com", "password", "1234567890");
+
+        when(passwordEncoder.encode(signupRequest.getPassword())).thenReturn("encodedPassword");
+        when(userRepository.save(any(User.class))).thenThrow(new RuntimeException("Database constraint violation"));
+
+        RuntimeException thrown = assertThrows(
+                RuntimeException.class,
+                () -> userService.registerUser(signupRequest)
+        );
+
+        assertEquals("Database constraint violation", thrown.getMessage());
+    }
+
+    @Test
+    void testValidateRegister_Successful() {
+        RegisterRequest request = new RegisterRequest("John", "Doe", "john.doe@example.com", "password", "1234567890");
+
+        when(userRepository.existsByEmail("john.doe@example.com")).thenReturn(false);
+
+        Errors errors = userValidator.validateRegister(request);
+
+        assertNull(errors, "Expected no validation errors");
+    }
+
+    @Test
+    void testValidateRegister_ValidationErrors() {
+        RegisterRequest request = new RegisterRequest("", "", "invalid-email", "", "");
+
+        when(userRepository.existsByEmail("invalid-email")).thenReturn(false);
+
+        Errors errors = userValidator.validateRegister(request);
+
+        assertNotNull(errors);
+        assertEquals(4, errors.getErrors().size());
+        assertTrue(errors.getErrors().stream().anyMatch(e -> e.getField().equals("firstName") && e.getMessage().equals("First name must not be null or empty")));
+        assertTrue(errors.getErrors().stream().anyMatch(e -> e.getField().equals("lastName") && e.getMessage().equals("Last name must not be null or empty")));
+        assertTrue(errors.getErrors().stream().anyMatch(e -> e.getField().equals("email") && e.getMessage().equals("Email is in an incorrect format")));
+        assertTrue(errors.getErrors().stream().anyMatch(e -> e.getField().equals("password") && e.getMessage().equals("Password must not be null or empty")));
+    }
+
+    @Test
+    void testValidateRegister_EmailAlreadyExists() {
+        RegisterRequest request = new RegisterRequest("John", "Doe", "john.doe@example.com", "password", "1234567890");
+
+        when(userRepository.existsByEmail("john.doe@example.com")).thenReturn(true);
+
+        Errors errors = userValidator.validateRegister(request);
+
+        assertNotNull(errors);
+        assertEquals(1, errors.getErrors().size());
+        assertTrue(errors.getErrors().stream().anyMatch(e -> e.getField().equals("email") && e.getMessage().equals("Email already exists")));
+    }
+
+    @Test
+    void testValidateLogin_Successful() {
+        LoginRequest request = new LoginRequest("john.doe@example.com", "password");
+
+        Errors errors = userValidator.validateLogin(request);
+
+        assertNull(errors, "Expected no validation errors");
+    }
+
+    @Test
+    void testValidateLogin_ValidationErrors() {
+        LoginRequest request = new LoginRequest("", "");
+
+        Errors errors = userValidator.validateLogin(request);
+
+        assertNotNull(errors);
+        assertEquals(2, errors.getErrors().size());
+        assertTrue(errors.getErrors().stream().anyMatch(e -> e.getField().equals("email") && e.getMessage().equals("Email must not be null or empty")));
+        assertTrue(errors.getErrors().stream().anyMatch(e -> e.getField().equals("password") && e.getMessage().equals("Password must not be null or empty")));
     }
 
 

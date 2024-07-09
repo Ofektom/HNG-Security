@@ -11,6 +11,7 @@
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/dto/request/RegisterRequest.java
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/dto/request/validation/Error.java
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/dto/request/validation/Errors.java
+/Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/dto/request/validation/ValidationResponse.java
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/dto/response/ApiResponse.java
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/dto/response/ErrorResponse.java
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/dto/response/OrganisationListResponse.java
@@ -19,6 +20,7 @@
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/dto/response/UserResponse.java
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/dto/response/ValidationErrorResponse.java
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/exception/ApiError.java
+/Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/exception/DefaultExceptionHandler.java
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/exception/EmailAlreadyExistException.java
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/exception/GlobalExceptionHandler.java
 /Users/decagon/Documents/HNG/HNG-Security/src/main/java/com/example/HNG_Security/exception/InvalidEmailOrPasswordException.java

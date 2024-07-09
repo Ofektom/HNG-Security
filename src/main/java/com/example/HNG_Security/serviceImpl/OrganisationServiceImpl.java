@@ -58,30 +58,16 @@ public class OrganisationServiceImpl implements OrganisationService {
         return organisationRepository.save(organisation);
     }
 
-    @Transactional
+
     public void addUserToOrganisation(String orgId, String userId) {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
+        Organisation organisation = organisationRepository.findById(orgId)
+                .orElseThrow(() -> new OrganisationNotFoundException("Organisation not found"));
 
-        Optional<User> member = userRepository.findByEmail(email);
-        if (member.isPresent()){
-            Organisation authOrganisation = organisationRepository.findByUsersContains(member.get());
-            Organisation organisation = organisationRepository.findByOrgId(orgId).orElseThrow(() -> new OrganisationNotFoundException("Organisation not found"));
-            if(authOrganisation == organisation){
-                User user = userRepository.findByUserId(userId).orElseThrow(() -> new UserNotFoundException("User not found"));
-                organisation.getUsers().add(user);
-                organisationRepository.save(organisation);
-            }else{
-                throw new UnauthorizedUserException("UNAUTHORIZED");
-            }
-        }else {
-            throw new UserNotFoundException("User is not registered");
-        }
+        User user = userRepository.findByUserId(userId)
+                .orElseThrow(() -> new UserNotFoundException("User not found"));
 
-
-
-
-
-
+        organisation.getUsers().add(user);
+        organisationRepository.save(organisation);
     }
+
 }

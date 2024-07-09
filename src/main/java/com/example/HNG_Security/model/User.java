@@ -9,7 +9,6 @@ import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-import lombok.NonNull;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
@@ -25,22 +24,26 @@ public class User implements UserDetails {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(unique = true)
+    @Column(name = "user_id", unique = true)
     private String userId;
 
-    @NonNull
+    @Column(nullable = false)
+    @NotNull(message = "First name must not be null")
     private String firstName;
-    @NonNull
+
+    @Column(nullable = false)
+    @NotNull(message = "Last name must not be null")
     private String lastName;
 
-
-    @Column(unique = true)
-    @NonNull
+    @Column(nullable = false, unique = true)
+    @Email(message = "Enter a valid email")
+    @NotNull(message = "Email must not be null")
     private String email;
 
-
-
+    @Column(nullable = false)
+    @NotNull(message = "Password must not be null")
     private String password;
+
     private String phone;
 
     @JsonIgnore

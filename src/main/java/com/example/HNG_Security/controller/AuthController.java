@@ -2,13 +2,9 @@ package com.example.HNG_Security.controller;
 
 import com.example.HNG_Security.dto.request.LoginRequest;
 import com.example.HNG_Security.dto.request.RegisterRequest;
-import com.example.HNG_Security.dto.response.ApiResponse;
-import com.example.HNG_Security.dto.response.ErrorResponse;
-import com.example.HNG_Security.dto.response.UserResponse;
-import com.example.HNG_Security.model.User;
+import com.example.HNG_Security.dto.request.validation.Errors;
+import com.example.HNG_Security.model.UserValidator;
 import com.example.HNG_Security.service.UserService;
-import com.example.HNG_Security.utils.JwtUtils;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -21,20 +17,33 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
 
     private final UserService userService;
-    private final JwtUtils jwtUtils;
+    private final UserValidator userValidator;
 
-    public AuthController(UserService userService, JwtUtils jwtUtils) {
+    public AuthController(
+            UserService userService
+            ,UserValidator userValidator
+    ) {
         this.userService = userService;
-        this.jwtUtils = jwtUtils;
+        this.userValidator = userValidator;
     }
 
     @PostMapping("/register")
     public ResponseEntity<?> register(@Validated @RequestBody RegisterRequest request) {
-        return userService.registerUser(request);
+        Errors validationResponse = userValidator.validateRegister(request);
+        if (validationResponse != null) {
+            return ResponseEntity.unprocessableEntity().body(validationResponse);
+        }else {
+            return userService.registerUser(request);
+        }
     }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@Validated @RequestBody LoginRequest request) {
-        return userService.loginUser(request);
+        Errors validationResponse = userValidator.validateLogin(request);
+        if (validationResponse != null) {
+            return ResponseEntity.unprocessableEntity().body(validationResponse);
+        }else {
+            return userService.loginUser(request);
+        }
     }
 }

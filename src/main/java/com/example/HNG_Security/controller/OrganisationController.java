@@ -16,7 +16,9 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @RestController
@@ -76,10 +78,14 @@ public class OrganisationController {
     }
 
     @PostMapping("/{orgId}/users")
-    public ResponseEntity<?> addUserToOrganisation(@PathVariable String orgId, @Valid @RequestBody AddUserRequest request) {
-        organisationService.addUserToOrganisation(orgId, request.getUserId());
+    public ResponseEntity<Map<String, String>> addUserToOrganisation(@PathVariable String orgId, @RequestBody Map<String, String> request) {
+        String userId = request.get("userId");
+        organisationService.addUserToOrganisation(orgId, userId);
 
-        OrganisationUserError response = new OrganisationUserError("success", "User added to organisation successfully");
+        Map<String, String> response = new HashMap<>();
+        response.put("status", "success");
+        response.put("message", "User added to organisation successfully");
+
         return ResponseEntity.ok(response);
     }
 

@@ -13,4 +13,6 @@ public interface OrganisationRepository extends JpaRepository<Organisation, Stri
     Optional<Organisation> findByOrgId(String orgId);
 
     Organisation findByUsersContains(User user1);
+
+
 }

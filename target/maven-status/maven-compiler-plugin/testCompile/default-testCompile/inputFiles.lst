@@ -1,3 +1,5 @@
 /Users/decagon/Documents/HNG/HNG-Security/src/test/java/com/example/HNG_Security/HngSecurityApplicationTests.java
+/Users/decagon/Documents/HNG/HNG-Security/src/test/java/com/example/HNG_Security/serviceImpl/JwtUtilsTest.java
 /Users/decagon/Documents/HNG/HNG-Security/src/test/java/com/example/HNG_Security/serviceImpl/OrganisationServiceImplTest.java
 /Users/decagon/Documents/HNG/HNG-Security/src/test/java/com/example/HNG_Security/serviceImpl/UserServiceImplTest.java
+/Users/decagon/Documents/HNG/HNG-Security/src/test/java/com/example/HNG_Security/tests/auth.spec.java

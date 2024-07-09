@@ -7,6 +7,7 @@ import com.example.HNG_Security.model.Organisation;
 import com.example.HNG_Security.model.User;
 import com.example.HNG_Security.repository.OrganisationRepository;
 import com.example.HNG_Security.repository.UserRepository;
+import com.example.HNG_Security.serviceImpl.OrganisationServiceImpl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;

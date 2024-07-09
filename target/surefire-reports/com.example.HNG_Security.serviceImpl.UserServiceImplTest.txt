@@ -1,4 +1,4 @@
 -------------------------------------------------------------------------------
 Test set: com.example.HNG_Security.serviceImpl.UserServiceImplTest
 -------------------------------------------------------------------------------
-Tests run: 5, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.633 s -- in com.example.HNG_Security.serviceImpl.UserServiceImplTest
+Tests run: 12, Failures: 0, Errors: 0, Skipped: 0, Time elapsed: 1.159 s -- in com.example.HNG_Security.serviceImpl.UserServiceImplTest
