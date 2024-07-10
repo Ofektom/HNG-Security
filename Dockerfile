@@ -1,5 +1,5 @@
 # First stage: Build the application
-FROM maven:3.8.7-eclipse-temurin-17 AS build
+FROM maven:3.8.5-openjdk-17 AS build
 
 # Set the working directory in the build stage
 WORKDIR /app
@@ -12,7 +12,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Second stage: Build the final image
-FROM openjdk:21
+FROM openjdk:17
 
 # Set the working directory in the container
 WORKDIR /app
