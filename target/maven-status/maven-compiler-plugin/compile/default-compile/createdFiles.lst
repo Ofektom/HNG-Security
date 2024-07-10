@@ -38,6 +38,7 @@ com/example/HNG_Security/exception/DefaultExceptionHandler.class
 com/example/HNG_Security/repository/OrganisationRepository.class
 com/example/HNG_Security/dto/response/ApiResponse.class
 com/example/HNG_Security/dto/request/AddUserRequest.class
+com/example/HNG_Security/config/PingTask.class
 com/example/HNG_Security/exception/EmailAlreadyExistException.class
 com/example/HNG_Security/DotenvEnvironmentPostProcessor.class
 com/example/HNG_Security/config/WebSecurityConfig.class
