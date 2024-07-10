@@ -8,10 +8,10 @@ services:
     ports:
       - 8086:8086
     environment:
-      SPRING_DATASOURCE_URL: "jdbc:postgresql://localhost:5432/${DB_NAME}"
-      SPRING_DATASOURCE_USERNAME: "${DB_USERNAME}"
-      SPRING_DATASOURCE_PASSWORD: "${DB_PASSWORD}"
-      SHA512: "${SHA_SECRET}"
+      SPRING_DATASOURCE_URL: "jdbc:postgresql://dpg-cpvjr16ehbks73dv5f80-a:5432/react_spring"
+      SPRING_DATASOURCE_USERNAME: "react_spring_user"
+      SPRING_DATASOURCE_PASSWORD: "ByGZ9hVdjOMK50U6XrD8C8wTGx1tC9ac"
+      SHA512: "5627dcc7bb45a7cf9ddd211168fb727a2005338c5fe1e29faa71fc542bcd59e1bf0c604d65578ba9001984bfa0f25e29a509f130db33c51916bf0ebfbb78b645"
     networks:
       - app-network
     depends_on:
