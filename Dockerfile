@@ -1,5 +1,5 @@
 # First stage: Build the application
-FROM maven:3.8.5-openjdk-21 AS build
+FROM maven:3.8.7-eclipse-temurin-17 AS build
 
 # Set the working directory in the build stage
 WORKDIR /app
