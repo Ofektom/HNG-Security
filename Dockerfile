@@ -1,11 +1,8 @@
 # First stage: Build the application
-FROM maven:3.9.0-eclipse-temurin-17 AS build
+FROM openjdk:21 AS build
 
-# Install OpenJDK 21
-RUN apt-get update && \
-    apt-get install -y openjdk-21-jdk && \
-    update-alternatives --set java /usr/lib/jvm/java-21-openjdk-amd64/bin/java && \
-    update-alternatives --set javac /usr/lib/jvm/java-21-openjdk-amd64/bin/javac
+# Install Maven
+RUN apt-get update && apt-get install -y maven
 
 # Set the working directory in the build stage
 WORKDIR /app
@@ -18,7 +15,7 @@ COPY src ./src
 RUN mvn clean package -DskipTests
 
 # Second stage: Build the final image
-FROM eclipse-temurin:21-jdk-slim
+FROM openjdk:21
 
 # Set the working directory in the container
 WORKDIR /app
